@@ -1,23 +1,23 @@
-# Salesforce OAuth Integration App
+## Salesforce OAuth Integration App
 
 This application integrates with Salesforce using OAuth 2.0 and offers both **data fetching** and **real-time updates via webhooks**. It authenticates users via Salesforce, retrieves and stores their data (including custom fields and metadata), and listens to webhook notifications from Salesforce to keep the database in sync.
 
 ---
 
-## 🔧 Features
+##  Features
 
-- 🔐 OAuth 2.0 Authentication with Salesforce
-- 📥 Secure access token and instance URL storage
-- 📄 SOQL-based data extraction (including standard & custom fields)
-- 📦 Metadata extraction for custom fields
-- 🔁 Webhook listener for real-time updates from Salesforce
-- 🔄 Automatic parsing of webhook XML → JSON
-- 🧠 Intelligent upsert logic to update or insert records in DB
-- 🗃️ All retrieved or updated data stored in local database
+-  OAuth 2.0 Authentication with Salesforce
+-  Secure access token and instance URL storage
+-  SOQL-based data extraction (including standard & custom fields)
+-  Metadata extraction for custom fields
+-  Webhook listener for real-time updates from Salesforce
+-  Automatic parsing of webhook XML → JSON
+-  Intelligent upsert logic to update or insert records in DB
+-  All retrieved or updated data stored in local database
 
 ---
 
-## ⚙️ Workflow Overview
+##  Workflow Overview
 
 ### 1. **OAuth Authentication**
 
