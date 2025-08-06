@@ -5,6 +5,9 @@ import json,os
 from routes.salesforce_functions import SalesForceExtraction
 from datetime import datetime
 from log_setup import azure_func_logs,simple_logger
+from Helper.HelperFunc import HelperFunc
+from database.connection_manager import get_connection
+helper = HelperFunc(get_connection)
 logger = simple_logger()
 app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
 
@@ -159,17 +162,21 @@ def test_error(req: func.HttpRequest) -> func.HttpResponse:
 def Periodicaly_Salesforce_Sync(timer: func.TimerRequest) -> None:
     timer_logger.info("Timer Salesforce Data sync triggered at %s", datetime.utcnow().isoformat())
     try:
-        
-        company_id = os.getenv('DEFAULT_COMPANY_ID', 'D6C8558D-DB96-458D-A7C3-865B688F629E')
-        salesforce_data_extractor.sf_accounts(timer_logger,company_id)
-        salesforce_data_extractor.sf_opportunities(timer_logger,company_id)
-        salesforce_data_extractor.sf_contacts(timer_logger,company_id)
-        salesforce_data_extractor.sf_opportunity_activities(timer_logger,company_id)
-        salesforce_data_extractor.sf_opportunity_history(timer_logger,company_id)
-        salesforce_data_extractor.sf_users(timer_logger,company_id)
-        salesforce_data_extractor.sf_callstages(timer_logger,company_id)
-        salesforce_data_extractor.sf_custom_fields_full(timer_logger,company_id)
-        timer_logger.info("Salesforce sync completed successfully")
+       company_ids =  helper.get_company_ids_from_db()
+       if not company_ids:
+           timer_logger.warning("No company IDs found for Salesforce sync.")
+           return
+       for company_id in company_ids:
+            timer_logger.info(f"Starting Salesforce sync for Company ID: {company_id}")
+            salesforce_data_extractor.sf_accounts(timer_logger, company_id)
+            salesforce_data_extractor.sf_opportunities(timer_logger, company_id)
+            salesforce_data_extractor.sf_contacts(timer_logger, company_id)
+            salesforce_data_extractor.sf_opportunity_activities(timer_logger, company_id)
+            salesforce_data_extractor.sf_opportunity_history(timer_logger, company_id)
+            salesforce_data_extractor.sf_users(timer_logger, company_id)
+            salesforce_data_extractor.sf_callstages(timer_logger, company_id)
+            salesforce_data_extractor.sf_custom_fields_full(timer_logger, company_id)
+            timer_logger.info(f"Salesforce sync completed successfully for Company ID: {company_id}")
     except Exception as e:
         timer_logger.error(f"Salesforce sync error: {e}")
 

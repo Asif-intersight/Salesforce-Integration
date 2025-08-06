@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 load_dotenv()
 CLIENT_ID = os.getenv('CLIENT_ID')
 CLIENT_SECRET = os.getenv('CLIENT_SECRET')
-REDDIRECT_URI = os.getenv('REDDIRECT_URI')
+REDIRECT_URI = os.getenv('REDIRECT_URI')
 
 AUTHORIZE_URL = os.getenv('AUTHORIZE_URL')
 TOKEN_URL = os.getenv('TOKEN_URL')

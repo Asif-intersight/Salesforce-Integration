@@ -8,6 +8,7 @@ import logging
 import json
 from requests.exceptions import HTTPError
 from queries.insert_query import SalesforceUpsertFunctions
+from database.connection_manager import get_connection
 inserter = SalesforceUpsertFunctions()
 class HelperFunc:
     def __init__(self, get_connection):
@@ -263,7 +264,7 @@ class HelperFunc:
     
     def get_salesforce_token_from_db(self, company_id):
         try:
-            from database.connection_manager import get_connection
+            
             with get_connection() as conn:
                 cursor = conn.cursor()
 
@@ -339,3 +340,19 @@ class HelperFunc:
         except Exception as e:
             logging.error("Error retrieving Salesforce token for company %s: %s", company_id, str(e), exc_info=True)
             return None
+    def get_company_ids_from_db(self):
+        try:
+            with get_connection() as conn:  # Ensure get_connection is a callable
+                cursor = conn.cursor()
+                query = "SELECT Id FROM Companies"
+                cursor.execute(query)
+                result = cursor.fetchall()  # fetchall() is the correct method
+
+                # Extract IDs from result
+                company_ids = [row[0] for row in result]
+                return company_ids
+
+        except Exception as e:
+            # Log the error or handle it appropriately
+            print(f"Error fetching company IDs: {e}")
+            return []
