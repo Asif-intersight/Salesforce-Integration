@@ -92,7 +92,16 @@ def sync_Salesforce_tables(req: func.HttpRequest) -> func.HttpResponse:
     
     try:
         
-        company_id = os.getenv('DEFAULT_COMPANY_ID', 'D6C8558D-DB96-458D-A7C3-865B688F629E')
+        company_id = req.params.get("company_id")
+
+        if not company_id:
+            return func.HttpResponse(
+                json.dump({
+                    "success":False
+                }),
+                status_code = 404,
+            )
+        logging.info(company_id)
         salesforce_data_extractor.sf_accounts(http_logger,company_id)
         salesforce_data_extractor.sf_opportunities(http_logger,company_id)
         salesforce_data_extractor.sf_contacts(http_logger,company_id)

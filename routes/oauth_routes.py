@@ -27,17 +27,28 @@ def generate_pkce_pair():
 def handle_oauth_connect(req: func.HttpRequest):
     """
     Handle OAuth connection initiation
-    Encode code_verifier in the state parameter (Base64 encoded)
+    Encode code_verifier and company_id in the state parameter (Base64-encoded JSON)
     """
     try:
         verifier, challenge = generate_pkce_pair()
-        
-        # Encode verifier in state parameter (simple Base64 encoding)
-        # In production, you might want to encrypt this
-        encoded_verifier = base64.urlsafe_b64encode(verifier.encode()).decode()
-        state = f"cv_{encoded_verifier}"
-        
-        # Build authorization URL with state parameter containing verifier
+
+        # Get company_id from query params or headers
+        company_id = req.params.get('company_id') or req.headers.get('company_id')
+        if not company_id:
+            return {
+                "success": False,
+                "error": "Missing company_id"
+            }
+
+        # Encode state as JSON string, then Base64 encode it
+        state_obj = {
+            "cv": verifier,
+            "cid": company_id
+        }
+        state_json = json.dumps(state_obj)
+        encoded_state = base64.urlsafe_b64encode(state_json.encode()).decode()
+
+        # Build authorization URL
         auth_params = {
             'response_type': 'code',
             'client_id': CLIENT_ID,
@@ -45,95 +56,74 @@ def handle_oauth_connect(req: func.HttpRequest):
             'scope': 'api refresh_token',
             'code_challenge': challenge,
             'code_challenge_method': 'S256',
-            'state': state  # Contains encoded verifier
+            'state': encoded_state
         }
-        
+
         auth_url = f"{AUTHORIZE_URL}?{urlencode(auth_params)}"
-        
-        logging.info("Generated Salesforce authorization URL with encoded verifier in state")
-        logger.info("Generated Salesforce authorization URL with encoded verifier in state")
-        
+
+        logger.info("Generated Salesforce authorization URL with verifier and company_id in encoded state")
+
         return {
             "success": True,
             "auth_url": auth_url,
-            "message": "Redirect user to auth_url. Verifier is encoded in state parameter."
+            "message": "Redirect user to auth_url. State contains encoded verifier and company_id."
         }
-        
+
     except Exception as e:
-        logging.error(f"Failed to initiate OAuth flow: {e}")
         logger.error(f"Failed to initiate OAuth flow: {e}")
         return {
-            "success": False, 
-            "error": "OAuth connection failed", 
+            "success": False,
+            "error": "OAuth connection failed",
             "details": str(e)
         }
 def handle_oauth_callback(req: func.HttpRequest):
     """
     Handle OAuth callback from Salesforce
-    Decode code_verifier from state parameter
+    Decode code_verifier and company_id from state parameter
     """
     try:
-        # Get parameters from query string (Salesforce redirects with GET)
         code = req.params.get('code')
         state = req.params.get('state')
         error = req.params.get('error')
-        
-        # Check for OAuth errors
+
         if error:
-            logging.error(f"OAuth error from Salesforce: {error}")
             logger.error(f"OAuth error from Salesforce: {error}")
-            return {
-                "success": False,
-                "error": f"Salesforce OAuth error: {error}"
-            }
-        
+            return {"success": False, "error": f"Salesforce OAuth error: {error}"}
+
         if not code or not state:
-            logging.warning(f"Missing code or state in callback. Code: {bool(code)}, State: {bool(state)}")
-            logger.warning(f"Missing code or state in callback. Code: {bool(code)}, State: {bool(state)}")
-            return {
-                "success": False, 
-                "error": "Missing code or state parameter"
-            }
-        
-        # Decode code_verifier from state parameter
+            logger.warning("Missing code or state in callback")
+            return {"success": False, "error": "Missing code or state parameter"}
+
+        # Decode state (Base64-encoded JSON string)
         try:
-            if not state.startswith('cv_'):
-                raise ValueError("Invalid state format")
-            
-            encoded_verifier = state[3:]  # Remove 'cv_' prefix
-            code_verifier = base64.urlsafe_b64decode(encoded_verifier.encode()).decode()
-            
+            state_json = base64.urlsafe_b64decode(state.encode()).decode()
+            state_data = json.loads(state_json)
+
+            code_verifier = state_data.get("cv")
+            company_id = state_data.get("cid")
+
+            if not code_verifier or not company_id:
+                raise ValueError("Missing verifier or company ID in state")
+
         except Exception as e:
-            logging.error(f"Failed to decode verifier from state: {e}")
-            logger.error(f"Failed to decode verifier from state: {e}")
-            return {
-                "success": False,
-                "error": "Invalid state parameter"
-            }
-        
+            logger.error(f"Failed to decode state: {e}")
+            return {"success": False, "error": "Invalid state parameter"}
+
         # Exchange code for tokens
         token_data = exchange_code_for_tokens(code, code_verifier)
         if not token_data:
-            return {
-                "success": False,
-                "error": "Failed to exchange code for tokens"
-            }
-        
-        # Get company_id
-        company_id = os.getenv('DEFAULT_COMPANY_ID', 'D6C8558D-DB96-458D-A7C3-865B688F629E')
+            return {"success": False, "error": "Failed to exchange code for tokens"}
+
+        # Dummy user ID (you can pass that too if needed in the future)
         user_id = "0194400E-BFF7-7062-A535-2C9AD4D17713"
-        # Store tokens in database
-        # logging.info(token_data)
-        logging.info("------------------------------------------------------------------------------")
-        logging.info(token_data)
-        logging.info("------------------------------------------------------------------------------")
-        result = store_tokens_in_db(token_data, company_id,user_id)
-        
-        logging.info("OAuth flow completed successfully")
+
+        result = store_tokens_in_db(token_data, company_id, user_id)
+
+        logger.info(f"OAuth flow completed successfully for company: {company_id}")
         return result
-        
+
     except Exception as e:
-        logging.error(f"OAuth callback error: {e}")
+        logger.error(f"OAuth callback error: {e}")
         return {
             "success": False,
             "error": "OAuth callback failed",

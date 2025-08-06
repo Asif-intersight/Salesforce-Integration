@@ -28,7 +28,7 @@ class SalesForceExtraction:
     def sf_accounts(self,logger,company_id):
         try:
             logger.info(" Salesforce accounts sync started")
-            last_sync = helper.get_last_sync_time("accounts")
+            last_sync = helper.get_last_sync_time("accounts",company_id)
 
             if last_sync and not isinstance(last_sync, datetime):
                 raise TypeError(
@@ -94,7 +94,7 @@ class SalesForceExtraction:
             logger.info("Inserting accounts into DB…")
             if data:
                 inserter.insert_account(data)
-                helper.update_sync_log('accounts', datetime.now(pytz.UTC))
+                helper.update_sync_log('accounts', datetime.now(pytz.UTC),company_id)
 
             logger.info("Accounts inserted, count: %d", len(data))
             return {
@@ -126,7 +126,7 @@ class SalesForceExtraction:
     def sf_opportunities(self, logger, company_id):
         try:
             logger.info("Salesforce opportunities sync started")
-            last_sync = helper.get_last_sync_time('opportunities')
+            last_sync = helper.get_last_sync_time('opportunities',company_id)
 
             if last_sync and not isinstance(last_sync, datetime):
                 raise TypeError(f"Expected datetime.datetime, got {type(last_sync)}")
@@ -199,7 +199,7 @@ class SalesForceExtraction:
             logger.info("Inserting/upserting into opportunities table…")
             if data:
                 inserter.upsert_opportunity(data)
-                helper.update_sync_log('opportunities', datetime.now(pytz.UTC))
+                helper.update_sync_log('opportunities', datetime.now(pytz.UTC),company_id)
 
             logger.info("Opportunities sync completed, count: %d", len(data))
             return {
@@ -231,7 +231,7 @@ class SalesForceExtraction:
     def sf_contacts(self, logger, company_id):
         try:
             logger.info("Salesforce contacts sync started")
-            last_sync = helper.get_last_sync_time('contacts')
+            last_sync = helper.get_last_sync_time('contacts',company_id)
 
             if last_sync and not isinstance(last_sync, datetime):
                 raise TypeError(f"Expected datetime.datetime, got {type(last_sync)}")
@@ -306,7 +306,7 @@ class SalesForceExtraction:
             logger.info("Inserting/upserting into contacts table…")
             if data:
                 inserter.upsert_contact(data)
-                helper.update_sync_log('contacts', datetime.now(pytz.UTC))
+                helper.update_sync_log('contacts', datetime.now(pytz.UTC),company_id)
 
             logger.info("Contacts sync completed, count: %d", len(data))
             return {
@@ -339,7 +339,7 @@ class SalesForceExtraction:
     def sf_opportunity_activities(self, logger, company_id):
         try:
             logger.info("Salesforce opportunity activities sync started")
-            last_sync = helper.get_last_sync_time('opportunity_activities')
+            last_sync = helper.get_last_sync_time('opportunity_activities',company_id)
 
             if last_sync and not isinstance(last_sync, datetime):
                 raise TypeError(f"Expected datetime.datetime, got {type(last_sync)}")
@@ -413,7 +413,7 @@ class SalesForceExtraction:
             logger.info("Inserting/upserting opportunity activities into DB")
             if data:
                 inserter.upsert_opportunity_activities(data)
-                helper.update_sync_log('opportunity_activities', datetime.now(pytz.UTC))
+                helper.update_sync_log('opportunity_activities', datetime.now(pytz.UTC),company_id)
 
             logger.info("Opportunity activities sync completed, count: %d", len(data))
             return {
@@ -445,7 +445,7 @@ class SalesForceExtraction:
     def sf_opportunity_history(self, logger, company_id):
         try:
             logger.info("Salesforce opportunity history sync started")
-            last_sync = helper.get_last_sync_time('opportunity_history')
+            last_sync = helper.get_last_sync_time('opportunity_history',company_id)
 
             if last_sync and not isinstance(last_sync, datetime):
                 raise TypeError(f"Expected datetime.datetime, got {type(last_sync)}")
@@ -519,7 +519,7 @@ class SalesForceExtraction:
             logger.info("Inserting/upserting opportunity history into DB")
             if data:
                 inserter.upsert_opp_history(data)
-                helper.update_sync_log('opportunity_history', datetime.now(pytz.UTC))
+                helper.update_sync_log('opportunity_history', datetime.now(pytz.UTC),company_id)
 
             logger.info("Opportunity history sync completed, count: %d", len(data))
             return {
@@ -552,7 +552,7 @@ class SalesForceExtraction:
     def sf_users(self, logger, company_id):
         try:
             logger.info("Salesforce users sync started")
-            last_sync = helper.get_last_sync_time('users')
+            last_sync = helper.get_last_sync_time('users',company_id)
 
             if last_sync and not isinstance(last_sync, datetime):
                 raise TypeError(f"Expected datetime, got {type(last_sync)}")
@@ -626,7 +626,7 @@ class SalesForceExtraction:
             if data:
                 logger.info("Inserting/updating users into DB")
                 inserter.upsert_user(data)
-                helper.update_sync_log('users', datetime.now(pytz.UTC))
+                helper.update_sync_log('users', datetime.now(pytz.UTC),company_id)
 
             logger.info("Users sync completed. Count: %d", len(data))
             return {
@@ -660,7 +660,7 @@ class SalesForceExtraction:
     def sf_callstages(self, logger, company_id):
         try:
             logger.info("Salesforce call stages sync started")
-            last_sync = helper.get_last_sync_time('callstages')
+            last_sync = helper.get_last_sync_time('callstages',company_id)
 
             if last_sync and not isinstance(last_sync, datetime):
                 raise TypeError(f"Expected datetime.datetime, got {type(last_sync)}")
@@ -734,7 +734,7 @@ class SalesForceExtraction:
             if data:
                 logger.info("Inserting/updating call stages into DB")
                 inserter.upsert_call_stages(data)
-                helper.update_sync_log('callstages', datetime.now(pytz.UTC))
+                helper.update_sync_log('callstages', datetime.now(pytz.UTC),company_id)
 
             logger.info("Call stages sync completed. Count: %d", len(data))
             return {
@@ -775,7 +775,7 @@ class SalesForceExtraction:
                 logger.info(f"Processing {table}...")
 
                 table_sync_key = f"CrmAttributeValues_{table}"
-                last_sync = helper.get_last_sync_time(table_sync_key)
+                last_sync = helper.get_last_sync_time(table_sync_key,company_id)
 
                 table_data = helper.sf_custom_fields_for_object(table,company_id, last_sync)
 
@@ -798,11 +798,11 @@ class SalesForceExtraction:
                     inserter.upsert_crm_attribute_values(table_data)
                     logger.info(f"Custom field values for {table} inserted")
 
-                    helper.update_sync_log(table_sync_key, datetime.now(pytz.UTC))
+                    helper.update_sync_log(table_sync_key, datetime.now(pytz.UTC),company_id)
                     logger.info(f"Sync log updated for {table}")
                 else:
                     if last_sync:
-                        helper.update_sync_log(table_sync_key, datetime.now(pytz.UTC))
+                        helper.update_sync_log(table_sync_key, datetime.now(pytz.UTC),company_id)
                         logger.info(f"No changes for {table}, but sync log updated")
                     else:
                         logger.info(f"No custom fields found for {table} (first sync)")

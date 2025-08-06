@@ -14,34 +14,35 @@ class HelperFunc:
     def __init__(self, get_connection):
         self.get_connection = get_connection
     
-    def get_last_sync_time(self, table_name):
+    def get_last_sync_time(self, table_name,company_id):
         """Get the last synchronization timestamp from your database"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
                 SELECT MAX(last_sync_time) 
                 FROM sync_log 
-                WHERE table_name = ?
-            """, (table_name,))
+                WHERE table_name = ? AND CompanyId = ?
+            """, (table_name,company_id))
             result = cursor.fetchone()
             return result[0] if result[0] else None
 
-    def update_sync_log(self, table_name, sync_time):
+    def update_sync_log(self, table_name, sync_time, company_id):
         """Update the last sync time using SQL Server MERGE statement"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
                 MERGE sync_log AS target
-                USING (SELECT ? AS table_name, ? AS last_sync_time) AS source
-                ON (target.table_name = source.table_name)
+                USING (SELECT ? AS table_name, ? AS last_sync_time, ? AS CompanyId) AS source
+                ON (target.table_name = source.table_name AND target.CompanyId = source.CompanyId)
                 WHEN MATCHED THEN
                     UPDATE SET last_sync_time = source.last_sync_time, created_at = GETDATE()
                 WHEN NOT MATCHED THEN
-                    INSERT (table_name, last_sync_time, created_at)
-                    VALUES (source.table_name, source.last_sync_time, GETDATE());
-            """, (table_name, sync_time))
+                    INSERT (table_name, last_sync_time, created_at, CompanyId)
+                    VALUES (source.table_name, source.last_sync_time, GETDATE(), source.CompanyId);
+            """, (table_name, sync_time, company_id))
             conn.commit()
-            print(f"Upserted sync log for {table_name}")
+            print(f"Upserted sync log for table: {table_name}, company: {company_id}")
+
 
 
     # def tooling_query(self,soql,company_id):
@@ -271,7 +272,7 @@ class HelperFunc:
                 logging.info("Getting Salesforce token for Company Id: %s", company_id)
 
                 query = """
-                    SELECT TOP 1 
+                    SELECT  
                     Id,
                     ProviderName,
                     ServiceType,

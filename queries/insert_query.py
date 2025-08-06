@@ -384,7 +384,7 @@ class SalesforceUpsertFunctions:
                                     IsEmailBounced, PhotoUrl, Jigsaw, JigsawContactId, CleanStatus,
                                     IndividualId, Level__c, Languages__c
                                 )
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
                         """
 
                         values = [
@@ -418,7 +418,7 @@ class SalesforceUpsertFunctions:
                             # INSERT values (same order)
                             rec.get("Id"),
                             rec.get("IsDeleted"), rec.get("MasterRecordId"), rec.get("AccountId"),
-                            rec.get("LastName"), rec.get("FirstName"), rec.get("Salutation"), rec.get("Name"),
+                            rec.get("LastName"), rec.get("FirstName"), rec.get("Salutation"), rec.get("Name"),  # ✅ FIXED: Name added here
                             rec.get("OtherStreet"), rec.get("OtherCity"), rec.get("OtherState"),
                             rec.get("OtherPostalCode"), rec.get("OtherCountry"),
                             rec.get("MailingStreet"), rec.get("MailingCity"), rec.get("MailingState"),
